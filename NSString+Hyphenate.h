@@ -25,4 +25,5 @@
 // hyphenation tasks per locale.
 - (NSString*)stringByHyphenatingWithLocale:(NSLocale*)locale;
 
+- (NSString*)stringByHyphenatingWithLocale:(NSLocale*)locale usingSharedDictionaries:(NSMutableDictionary *)dictionaries;
 @end

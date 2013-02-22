@@ -11,9 +11,10 @@
 
 @implementation NSString (Hyphenate)
 
-- (NSString*)stringByHyphenatingWithLocale:(NSLocale*)locale {
-    static HyphenDict* dict = NULL;
-    static NSString* localeIdentifier = nil;
+- (NSString*)stringByHyphenatingWithLocale:(NSLocale*)locale usingSharedDictionaries:(NSMutableDictionary *)sharedDictionaries
+{
+    HyphenDict* dict = NULL;
+    NSString* localeIdentifier = nil;
     static NSBundle* bundle = nil;
     
     ////////////////////////////////////////////////////////////////////////////
@@ -46,21 +47,47 @@
         dict = NULL;
     }
     
-    localeIdentifier = [locale localeIdentifier];
-    
     if (bundle == nil) {
         NSString* bundlePath = [[[NSBundle mainBundle] resourcePath] 
                                 stringByAppendingPathComponent:
                                 @"Hyphenate.bundle"];
         bundle = [NSBundle bundleWithPath:bundlePath];
     }
+
+    localeIdentifier = [locale localeIdentifier];
     
-    if (dict == NULL) {
-        dict = hnj_hyphen_load([[bundle pathForResource:
-                                 [NSString stringWithFormat:@"hyph_%@", 
-                                   localeIdentifier]
-                                                 ofType:@"dic"]
-                                UTF8String]);
+    NSArray * localeComponents = [localeIdentifier componentsSeparatedByString:@"_"];
+    
+    @synchronized (sharedDictionaries) {
+        if (sharedDictionaries && [sharedDictionaries objectForKey:locale.localeIdentifier]) {
+            dict = [[sharedDictionaries objectForKey:localeIdentifier] pointerValue];
+        }
+        
+        if (dict == NULL && localeComponents.count > 1) {
+            dict = [[sharedDictionaries objectForKey:localeComponents[0]] pointerValue];
+        }
+        
+        if (dict == NULL) {
+            dict = hnj_hyphen_load([[bundle pathForResource:
+                                     [NSString stringWithFormat:@"hyph_%@",
+                                      localeIdentifier]
+                                                     ofType:@"dic"]
+                                    UTF8String]);
+        }
+        
+        if (dict == NULL) {
+            if (localeComponents.count > 1) {
+                localeIdentifier = localeComponents[0];
+                
+                dict = hnj_hyphen_load([[bundle pathForResource:
+                                         [NSString stringWithFormat:@"hyph_%@",
+                                          localeComponents[0]]
+                                                         ofType:@"dic"]
+                                        UTF8String]);
+            }
+        }
+        
+        [sharedDictionaries setObject:[NSValue valueWithPointer:dict] forKey:localeIdentifier];
     }
     
     if (dict == NULL) {
@@ -92,11 +119,13 @@
     int wordLength;
     int i;
     
-    tokenizer = CFStringTokenizerCreate(kCFAllocatorDefault, 
+    tokenizer = CFStringTokenizerCreate(kCFAllocatorDefault,
                                         (CFStringRef)self, 
                                         CFRangeMake(0, [self length]), 
                                         kCFStringTokenizerUnitWordBoundary, 
                                         (CFLocaleRef)locale);
+    
+    BOOL skippingTag = NO;
     
     while ((tokenType = CFStringTokenizerAdvanceToNextToken(tokenizer)) 
            != kCFStringTokenizerTokenNone) 
@@ -105,6 +134,15 @@
         token = [self substringWithRange:
                  NSMakeRange(tokenRange.location, tokenRange.length)];
 
+        if ([token hasPrefix:@"<"]) {
+            skippingTag = YES;
+        }
+        
+        if ([token hasSuffix:@">"]) {
+            skippingTag = NO;
+        }
+        
+        
         if (tokenType & kCFStringTokenizerTokenHasNonLettersMask) {
             [result appendString:token];
         } else {
@@ -128,7 +166,7 @@
             @autoreleasepool {
                 
                 for (i = 0; i < wordLength; i++) {
-                    if (hyphens[i] & 1) {
+                    if (hyphens[i] & 1 && !skippingTag) {
                         
                         NSString *tokenized = [[[NSString alloc] initWithBytesNoCopy:(void *)tokenChars + loc length:i - loc + 1 encoding:NSUTF8StringEncoding freeWhenDone:NO] autorelease];
                         if (tokenized.length < 2) {
@@ -169,7 +207,15 @@
     
     CFRelease(tokenizer);
     
+    if (!sharedDictionaries) {
+        hnj_hyphen_free(dict);
+    }
+    
     return result;
+}
+
+- (NSString*)stringByHyphenatingWithLocale:(NSLocale*)locale {
+    return [self stringByHyphenatingWithLocale:locale usingSharedDictionaries:nil];
 }
 
 @end
