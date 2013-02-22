@@ -108,7 +108,8 @@
         if (tokenType & kCFStringTokenizerTokenHasNonLettersMask) {
             [result appendString:token];
         } else {
-            char const* tokenChars = [[token lowercaseString] UTF8String];
+            char const* tokenChars = [token UTF8String];
+
             wordLength = strlen(tokenChars);
             // This is the buffer size the algorithm needs.
             hyphens = (char*)malloc(wordLength + 5); // +5, see hypen.h 
@@ -123,17 +124,34 @@
             
             NSUInteger loc = 0;
             NSUInteger len = 0;
-            for (i = 0; i < wordLength; i++) {
-                if (hyphens[i] & 1) {
-                    len = i - loc + 1;
-                    [result appendString:
-                     [token substringWithRange:NSMakeRange(loc, len)]];
-                    [result appendString:@"­"]; // NOTE: UTF-8 soft hyphen!
-                    loc = loc + len;
+            
+            @autoreleasepool {
+                
+                for (i = 0; i < wordLength; i++) {
+                    if (hyphens[i] & 1) {
+                        
+                        NSString *tokenized = [[[NSString alloc] initWithBytesNoCopy:(void *)tokenChars + loc length:i - loc + 1 encoding:NSUTF8StringEncoding freeWhenDone:NO] autorelease];
+                        if (tokenized.length < 2) {
+                            continue;
+                        }
+                        char * reps = NULL;
+                        if (rep != NULL) {
+                            reps = rep[i];
+                        }
+
+                        
+                        len = i - loc + 1;
+                        [result appendString:tokenized];
+                        [result appendString:@"\u00AD"];
+                        loc = loc + len;
+                    }
                 }
-            }
-            if (loc < wordLength) {
-                [result appendString:[token substringFromIndex:loc]];
+                if (loc < wordLength) {
+                    
+                    NSString * tokenized = [[[NSString alloc] initWithBytesNoCopy:(void *)tokenChars + loc length:wordLength - loc encoding:NSUTF8StringEncoding freeWhenDone:NO] autorelease];
+                    [result appendString:tokenized];
+                }
+                
             }
             
             // Clean up
