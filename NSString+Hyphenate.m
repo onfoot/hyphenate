@@ -59,7 +59,9 @@
     NSArray * localeComponents = [localeIdentifier componentsSeparatedByString:@"_"];
     
     @synchronized (sharedDictionaries) {
-        if (sharedDictionaries && [sharedDictionaries objectForKey:locale.localeIdentifier]) {
+        
+        BOOL needToStore = NO;
+        if (sharedDictionaries && [sharedDictionaries objectForKey:localeIdentifier]) {
             dict = [[sharedDictionaries objectForKey:localeIdentifier] pointerValue];
         }
         
@@ -73,6 +75,8 @@
                                       localeIdentifier]
                                                      ofType:@"dic"]
                                     UTF8String]);
+            
+            needToStore = YES;
         }
         
         if (dict == NULL) {
@@ -84,10 +88,13 @@
                                           localeComponents[0]]
                                                          ofType:@"dic"]
                                         UTF8String]);
+                needToStore = YES;
             }
         }
         
-        [sharedDictionaries setObject:[NSValue valueWithPointer:dict] forKey:localeIdentifier];
+        if (needToStore) {
+            [sharedDictionaries setObject:[NSValue valueWithPointer:dict] forKey:localeIdentifier];
+        }
     }
     
     if (dict == NULL) {
