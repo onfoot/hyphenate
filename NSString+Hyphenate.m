@@ -179,11 +179,6 @@
                         if (tokenized.length < 2) {
                             continue;
                         }
-                        char * reps = NULL;
-                        if (rep != NULL) {
-                            reps = rep[i];
-                        }
-
                         
                         len = i - loc + 1;
                         [result appendString:tokenized];
