@@ -29,7 +29,7 @@
     CFStringRef language;
     if (locale == nil 
         && (language = CFStringTokenizerCopyBestStringLanguage(
-            (CFStringRef)self, CFRangeMake(0, [self length]))))
+            (CFStringRef)self, CFRangeMake(0, MIN(200, [self length])))))
     {
         locale = [[[NSLocale alloc] 
                   initWithLocaleIdentifier:(NSString*)language] autorelease];
