@@ -11,7 +11,7 @@
 
 @implementation NSString (Hyphenate)
 
-- (NSString*)stringByHyphenatingWithLocale:(NSLocale*)locale usingSharedDictionaries:(NSMutableDictionary *)sharedDictionaries
+- (NSString*)stringByHyphenatingWithLocale:(NSLocale*)locale usingSharedDictionaries:(id)sharedDictionaries
 {
     HyphenDict* dict = NULL;
     NSString* localeIdentifier = nil;
@@ -155,7 +155,7 @@
         } else {
             char const* tokenChars = [token UTF8String];
 
-            wordLength = strlen(tokenChars);
+            wordLength = (int)strlen(tokenChars);
             // This is the buffer size the algorithm needs.
             hyphens = (char*)malloc(wordLength + 5); // +5, see hypen.h 
             rep = NULL; // Will be allocated by the algorithm
