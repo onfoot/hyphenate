@@ -31,8 +31,8 @@
         && (language = CFStringTokenizerCopyBestStringLanguage(
             (CFStringRef)self, CFRangeMake(0, MIN(200, [self length])))))
     {
-        locale = [[[NSLocale alloc] 
-                  initWithLocaleIdentifier:(NSString*)language] autorelease];
+        locale = [[NSLocale alloc] 
+                  initWithLocaleIdentifier:(__bridge NSString*)language];
         CFRelease(language);                
     }
     
@@ -175,7 +175,7 @@
                 for (i = 0; i < wordLength; i++) {
                     if (hyphens[i] & 1 && !skippingTag) {
                         
-                        NSString *tokenized = [[[NSString alloc] initWithBytesNoCopy:(void *)tokenChars + loc length:i - loc + 1 encoding:NSUTF8StringEncoding freeWhenDone:NO] autorelease];
+                        NSString *tokenized = [[NSString alloc] initWithBytesNoCopy:(void *)tokenChars + loc length:i - loc + 1 encoding:NSUTF8StringEncoding freeWhenDone:NO];
                         if (tokenized.length < 2) {
                             continue;
                         }
@@ -188,7 +188,7 @@
                 }
                 if (loc < wordLength) {
                     
-                    NSString * tokenized = [[[NSString alloc] initWithBytesNoCopy:(void *)tokenChars + loc length:wordLength - loc encoding:NSUTF8StringEncoding freeWhenDone:NO] autorelease];
+                    NSString * tokenized = [[NSString alloc] initWithBytesNoCopy:(void *)tokenChars + loc length:wordLength - loc encoding:NSUTF8StringEncoding freeWhenDone:NO];
                     [result appendString:tokenized];
                 }
                 
