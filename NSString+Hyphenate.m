@@ -70,13 +70,18 @@
         }
         
         if (dict == NULL) {
-            dict = hnj_hyphen_load([[bundle pathForResource:
-                                     [NSString stringWithFormat:@"hyph_%@",
-                                      localeIdentifier]
-                                                     ofType:@"dic"]
-                                    UTF8String]);
+            NSString * dictionaryPath = [bundle pathForResource:
+                                         [NSString stringWithFormat:@"hyph_%@",
+                                          localeIdentifier]
+                                                         ofType:@"dic"];
             
-            needToStore = YES;
+            if (dictionaryPath != nil) {
+                dict = hnj_hyphen_load([dictionaryPath UTF8String]);
+                
+                needToStore = YES;
+            }
+
+            
         }
         
         if (dict == NULL) {
